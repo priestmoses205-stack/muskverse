@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>MuskVerse — Musk Stocks & Crypto</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; }
+body {
+  background:#070b14; color:#EDF1F8;
+  font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.5; overflow:hidden;
+}
+button { font-family:inherit; }
+a { color:inherit; text-decoration:none; }
+
+/* ambient background */
+.orb { position:fixed; border-radius:50%; filter:blur(90px); pointer-events:none; z-index:0; }
+.orb.g { background:rgba(245,197,24,.13); width:340px; height:340px; top:-90px; right:-110px; }
+.orb.c { background:rgba(79,195,247,.12); width:300px; height:300px; bottom:-70px; left:-100px; }
+.orb.p { background:rgba(139,92,246,.10); width:260px; height:260px; top:38%; left:52%; }
+
+#shell { position:relative; z-index:1; height:100vh; height:100dvh; max-width:440px; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; }
+@media (min-width:500px){ #shell { border-left:1px solid rgba(255,255,255,.06); border-right:1px solid rgba(255,255,255,.06); } }
+
+/* top bar */
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 10px; flex-shrink:0; }
+.brand { display:flex; align-items:center; gap:9px; cursor:pointer; }
+.brand .mark { width:34px; height:34px; }
+.brand .nm { font-weight:900; font-size:17px; letter-spacing:.6px; color:#F5C518; }
+.brand .nm i { font-style:normal; color:#4FC3F7; }
+.cashpill { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:7px 13px; font-size:12.5px; font-weight:800; color:#F5C518; backdrop-filter:blur(12px); }
+
+/* stage + screens */
+#stage { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:4px 16px 24px; }
+.screen { display:none; }
+.screen.on { display:block; animation:fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px);} to { opacity:1; transform:none;} }
+
+/* glass */
+.glass {
+  background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.10);
+  border-radius:22px; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 10px 34px rgba(0,0,0,.32);
+}
+.sec-h { display:flex; align-items:center; justify-content:space-between; margin:20px 2px 10px; }
+.sec-h b { font-size:15.5px; font-weight:800; letter-spacing:.2px; }
+.live-pill { display:inline-flex; align-items:center; gap:6px; font-size:10px; font-weight:900; letter-spacing:1px; color:#7de8ac; background:rgba(38,166,91,.14); border:1px solid rgba(38,166,91,.35); border-radius:999px; padding:4px 10px; }
+.live-dot { width:6px; height:6px; border-radius:50%; background:#26A65B; animation:pulse 1.6s infinite; }
+@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(38,166,91,.55);} 70%{box-shadow:0 0 0 6px rgba(38,166,91,0);} 100%{box-shadow:0 0 0 0 rgba(38,166,91,0);} }
+.sub { color:#9AA3B5; font-size:12.5px; }
+
+/* hero dashboard */
+.greet { display:flex; align-items:center; gap:12px; padding:4px 2px 14px; }
+.avatar { width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg,rgba(245,197,24,.25),rgba(79,195,247,.18)); border:1px solid rgba(255,255,255,.16); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:16px; color:#F5C518; flex-shrink:0; }
+.greet .hi { font-size:12.5px; color:#9AA3B5; }
+.greet .hn { font-size:16.5px; font-weight:800; }
+.hero { padding:20px; text-align:left; position:relative; overflow:hidden; }
+.hero .lab { font-size:12px; color:#9AA3B5; letter-spacing:.4px; }
+.hero .big { font-size:34px; font-weight:900; color:#F5C518; letter-spacing:.5px; font-variant-numeric:tabular-nums; margin-top:2px; }
+.hero .row { display:flex; justify-content:space-between; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.09); }
+.hero .row .k { color:#9AA3B5; font-size:12px; }
+.hero .row .v { font-weight:800; font-size:14px; font-variant-numeric:tabular-nums; }
+.hero .glowline { position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(245,197,24,.8),rgba(79,195,247,.6),transparent); }
+
+/* quick actions */
+.qa { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
+.qa .q { padding:13px 4px; text-align:center; cursor:pointer; border-radius:18px; transition:transform .12s; }
+.qa .q:active { transform:scale(.94); }
+.qa .q svg { width:21px; height:21px; stroke:#F5C518; }
+.qa .q span { display:block; font-size:10.5px; color:#C7CDDA; margin-top:5px; font-weight:600; }
+
+/* asset rows + cards */
+.arow { display:flex; align-items:center; gap:13px; padding:14px; margin-bottom:10px; cursor:pointer; }
+.badge-ic { width:40px; height:40px; border-radius:13px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.badge-ic svg { width:20px; height:20px; }
+.badge-ic b { font-size:15px; font-weight:900; }
+.arow .meta { flex:1; min-width:0; }
+.arow .nm { font-weight:800; font-size:14.5px; }
+.arow .tg { font-size:11px; color:#8A93A6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.arow .pr { text-align:right; }
+.arow .px { font-weight:800; font-size:14.5px; font-variant-numeric:tabular-nums; }
+.arow .ch { font-size:11px; font-weight:800; font-variant-numeric:tabular-nums; }
+.ch.up { color:#3DDB8B; } .ch.dn { color:#FF7B74; }
+.pv-tag { font-size:10px; color:#4FC3F7; font-weight:800; letter-spacing:.5px; }
+.est { color:#9AA3B5; font-size:12.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+
+/* crypto grid */
+.cgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ccell { padding:14px; }
+.ccell .top { display:flex; justify-content:space-between; align-items:center; }
+.ccell .symb { font-weight:900; font-size:14px; }
+.ccell .px { margin-top:7px; font-weight:800; font-size:16px; font-variant-numeric:tabular-nums; }
+.ccell .nm2 { font-size:10.5px; color:#8A93A6; margin-top:1px; }
+
+/* forms */
+.fcard { padding:18px; margin-bottom:12px; }
+.fcard h3 { font-size:15px; font-weight:800; margin-bottom:6px; }
+label { display:block; color:#9AA3B5; font-size:11.5px; font-weight:700; margin:10px 0 5px; letter-spacing:.3px; }
+input, select { width:100%; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.13); border-radius:13px; color:#EDF1F8; padding:13px; font-size:14.5px; outline:none; }
+input:focus { border-color:rgba(245,197,24,.65); }
+.chips { display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 10px; }
+.chip { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.13); color:#C7CDDA; border-radius:11px; padding:9px 13px; font-size:12.5px; font-weight:700; cursor:pointer; }
+.chip.on { background:linear-gradient(135deg,#F5C518,#ffd84d); color:#141414; border-color:transparent; font-weight:900; }
+.addr { background:rgba(6,12,24,.5); border:1px solid rgba(255,255,255,.12); border-radius:13px; padding:12px; color:#4FC3F7; font-size:11.5px; word-break:break-all; margin-bottom:10px; font-family:ui-monospace,Menlo,monospace; }
+.btn { display:block; width:100%; border:none; border-radius:15px; padding:15px; font-size:14.5px; font-weight:900; cursor:pointer; margin-top:10px; background:linear-gradient(135deg,#F5C518,#ffd84d); color:#141414; box-shadow:0 6px 22px rgba(245,197,24,.28); transition:transform .12s,opacity .12s; }
+.btn:active { transform:scale(.97); }
+.btn:disabled { opacity:.55; }
+.btn.ghost { background:rgba(255,255,255,.06); border:1px solid rgba(245,197,24,.55); color:#F5C518; box-shadow:none; }
+.btn.blk { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#EDF1F8; box-shadow:none; }
+
+/* tables */
+.tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.tbl th { text-align:left; color:#8A93A6; font-size:10px; text-transform:uppercase; letter-spacing:.6px; padding:8px 6px; border-bottom:1px solid rgba(255,255,255,.09); }
+.tbl td { padding:9px 6px; border-bottom:1px solid rgba(255,255,255,.05); font-variant-numeric:tabular-nums; }
+.st { font-size:9.5px; font-weight:900; letter-spacing:.6px; padding:3px 8px; border-radius:7px; }
+.st.approved { background:rgba(38,166,91,.16); color:#3DDB8B; }
+.st.pending { background:rgba(245,197,24,.15); color:#F5C518; }
+.st.rejected { background:rgba(239,83,80,.15); color:#FF7B74; }
+.empty { text-align:center; color:#8A93A6; font-size:12.5px; padding:16px; }
+
+/* locked wallet */
+.lockbox { text-align:center; padding:36px 22px; }
+.lockbox svg { width:38px; height:38px; stroke:#F5C518; margin-bottom:10px; }
+
+/* profile */
+.pcard { padding:20px; }
+.pcard .who { display:flex; gap:14px; align-items:center; }
+.pcard .who .avatar { width:54px; height:54px; border-radius:16px; font-size:19px; }
+.kv { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.07); font-size:13px; }
+.kv:last-child { border-bottom:none; }
+.kv .k { color:#9AA3B5; }
+.kv .v { font-weight:700; font-variant-numeric:tabular-nums; }
+
+/* bottom nav */
+.tabbar { flex-shrink:0; padding:8px 14px calc(14px + env(safe-area-inset-bottom)); }
+.tabbar .bar { display:flex; background:rgba(13,18,32,.72); border:1px solid rgba(255,255,255,.11); border-radius:22px; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:0 12px 34px rgba(0,0,0,.45); }
+.tab { flex:1; text-align:center; padding:11px 0 9px; cursor:pointer; border-radius:22px; transition:background .15s; }
+.tab svg { width:21px; height:21px; stroke:#8A93A6; }
+.tab span { display:block; font-size:9.5px; color:#8A93A6; font-weight:700; margin-top:3px; letter-spacing:.3px; }
+.tab.on svg { stroke:#F5C518; filter:drop-shadow(0 0 5px rgba(245,197,24,.6)); }
+.tab.on span { color:#F5C518; font-weight:900; }
+.tab.on { background:rgba(245,197,24,.10); }
+
+/* toast */
+#toast { position:fixed; left:50%; bottom:110px; transform:translateX(-50%) translateY(20px); max-width:340px; width:calc(100% - 48px); padding:13px 16px; border-radius:15px; font-size:13px; font-weight:600; z-index:200; opacity:0; pointer-events:none; transition:all .25s; background:rgba(16,22,38,.9); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(16px); box-shadow:0 14px 40px rgba(0,0,0,.5); }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.ok { border-color:rgba(38,166,91,.5); color:#aef0cd; }
+#toast.err { border-color:rgba(239,83,80,.5); color:#ffc2be; }
+
+/* admin modal */
+#adminModal { position:fixed; inset:0; background:rgba(4,7,14,.75); z-index:150; display:none; align-items:flex-start; justify-content:center; padding:20px; overflow:auto; backdrop-filter:blur(4px); }
+#adminModal .inner { width:100%; max-width:420px; padding:20px; margin-top:30px; }
+.am-h { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.am-h b { color:#F5C518; font-size:16px; letter-spacing:.4px; }
+.xbtn { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:#C7CDDA; border-radius:10px; padding:7px 12px; font-size:12px; cursor:pointer; }
+.hidden { display:none !important; }
+.upd { font-size:10.5px; color:#8A93A6; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="orb g"></div><div class="orb c"></div><div class="orb p"></div>
+
+<div id="shell">
+  <div class="topbar">
+    <div class="brand" id="brand">
+      <svg class="mark" viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="18" stroke="rgba(245,197,24,.55)" stroke-width="1.5"/>
+        <ellipse cx="20" cy="20" rx="17" ry="6.5" stroke="rgba(79,195,247,.7)" stroke-width="1.5" transform="rotate(-24 20 20)"/>
+        <circle cx="20" cy="20" r="4" fill="#F5C518"/>
+      </svg>
+      <div class="nm">MUSK<i>VERSE</i></div>
+    </div>
+    <div class="cashpill" id="cashPill">$0.00</div>
+  </div>
+
+  <div id="stage">
+
+    <!-- HOME -->
+    <div class="screen on" id="scr-home">
+      <div class="greet">
+        <div class="avatar" id="avatar">MV</div>
+        <div><div class="hi" id="greetHi">Welcome to MuskVerse</div><div class="hn" id="greetName">Investor</div></div>
+      </div>
+      <div class="hero glass">
+        <div class="glowline"></div>
+        <div class="lab">TOTAL PORTFOLIO VALUE</div>
+        <div class="big" id="heroTotal">$0.00</div>
+        <div class="row">
+          <div><div class="k">AVAILABLE CASH</div><div class="v" id="heroCash">$0.00</div></div>
+          <div style="text-align:right"><div class="k">HOLDINGS</div><div class="v" id="heroHold">$0.00</div></div>
+        </div>
+        <div class="upd" id="priceUpd">Loading live market data…</div>
+      </div>
+      <div class="qa">
+        <div class="q glass" onclick="go('wallet','deposit')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg><span>Deposit</span></div>
+        <div class="q glass" onclick="go('wallet','invest')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg><span>Invest</span></div>
+        <div class="q glass" onclick="go('wallet','withdraw')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M4 3h16"/></svg><span>Withdraw</span></div>
+        <div class="q glass" onclick="go('wallet','history')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span>History</span></div>
+      </div>
+      <div class="sec-h"><b>Markets</b><span class="live-pill"><span class="live-dot"></span>LIVE</span></div>
+      <div id="homeAssets"></div>
+      <div class="sec-h"><b>Crypto</b><span class="sub" id="cryptoUpd"></span></div>
+      <div class="cgrid" id="homeCrypto"></div>
+      <div class="upd" style="text-align:center;margin-top:16px">© 2026 MuskVerse · All markets shown for demonstration</div>
+    </div>
+
+    <!-- MARKETS -->
+    <div class="screen" id="scr-markets">
+      <div class="greet"><div><div class="hi">MuskVerse Markets</div><div class="hn">Live Quotes</div></div><span class="live-pill"><span class="live-dot"></span>LIVE</span></div>
+      <div id="mktAssets"></div>
+      <div class="sec-h"><b>Cryptocurrencies</b></div>
+      <div class="cgrid" id="mktCrypto"></div>
+      <div class="fcard glass" style="margin-top:16px">
+        <h3>About these markets</h3>
+        <div class="sub">Tesla (TSLA) is publicly traded with live quotes. SpaceX and Starlink are private companies — valuations shown are estimates. Dogelon Mars (ELON) is a live token price. Deposit with BTC, ETH, SOL or DOGE, invest in Musk assets, withdraw anytime.</div>
+      </div>
+    </div>
+
+    <!-- WALLET -->
+    <div class="screen" id="scr-wallet">
+      <div class="greet"><div><div class="hi">Your money</div><div class="hn">Wallet</div></div></div>
+      <div id="wLocked" class="lockbox glass">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <b style="display:block;font-size:16px">Wallet locked</b>
+        <div class="sub" style="margin-top:4px">Sign in to deposit, invest and withdraw.</div>
+        <button class="btn" onclick="go('account')">Sign In / Create Account</button>
+      </div>
+      <div id="wOpen" class="hidden">
+        <div class="hero glass">
+          <div class="glowline"></div>
+          <div class="lab">AVAILABLE CASH</div>
+          <div class="big" id="wCash">$0.00</div>
+          <div class="row"><div><div class="k">PORTFOLIO VALUE</div><div class="v" id="wVal">$0.00</div></div><div style="text-align:right"><div class="k">TOTAL</div><div class="v" id="wTot">$0.00</div></div></div>
+        </div>
+
+        <div class="fcard glass" id="wDeposit">
+          <h3>Deposit</h3>
+          <label>Select cryptocurrency</label>
+          <div class="chips" id="fundChips"></div>
+          <div class="addr" id="fundAddr">Loading address…</div>
+          <label>Amount (USD)</label><input id="fundAmt" type="number" inputmode="decimal" placeholder="0.00">
+          <label>Proof of payment (transaction hash / reference)</label><input id="fundProof" placeholder="Paste your transaction hash">
+          <button class="btn" id="btnFund" onclick="submitFund()">Submit Deposit</button>
+        </div>
+
+        <div class="fcard glass" id="wInvest">
+          <h3>Invest</h3>
+          <label>Asset</label>
+          <select id="invAsset">
+            <option value="tesla">Tesla (TSLA)</option>
+            <option value="elon">Dogelon Mars (ELON)</option>
+          </select>
+          <label>Amount (USD)</label><input id="invAmt" type="number" inputmode="decimal" placeholder="0.00">
+          <div class="sub" style="margin-top:6px" id="invRate">—</div>
+          <button class="btn" id="btnInv" onclick="submitInvest()">Invest</button>
+        </div>
+
+        <div class="fcard glass" id="wWithdraw">
+          <h3>Withdraw</h3>
+          <label>Payout currency</label>
+          <div class="chips" id="wdChips"></div>
+          <label>Amount (USD)</label><input id="wdAmt" type="number" inputmode="decimal" placeholder="0.00">
+          <label>Your wallet address</label><input id="wdWallet" placeholder="Paste your wallet address">
+          <button class="btn" id="btnWd" onclick="submitWithdraw()">Submit Withdrawal</button>
+        </div>
+
+        <div class="fcard glass" id="wHoldings">
+          <h3>Your holdings</h3>
+          <div style="overflow:auto"><table class="tbl" id="holdTbl"></table></div>
+        </div>
+
+        <div class="fcard glass" id="wHistory">
+          <h3>Transaction history</h3>
+          <div style="overflow:auto"><table class="tbl" id="txTbl"></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNT -->
+    <div class="screen" id="scr-account">
+      <div class="greet"><div><div class="hi">MuskVerse</div><div class="hn">Account</div></div></div>
+      <div id="aAuth">
+        <div class="fcard glass">
+          <h3>Sign in</h3>
+          <label>Email address</label><input id="siEmail" type="email" inputmode="email" placeholder="you@email.com" autocomplete="email">
+          <label>Password</label><input id="siPw" type="password" placeholder="••••••••">
+          <button class="btn" id="btnSi" onclick="signIn()">Sign In</button>
+        </div>
+        <div class="fcard glass">
+          <h3>Create account</h3>
+          <label>Full name</label><input id="suName" placeholder="Your full name" autocomplete="name">
+          <label>Email address</label><input id="suEmail" type="email" inputmode="email" placeholder="you@email.com" autocomplete="email">
+          <label>Password</label><input id="suPw" type="password" placeholder="Minimum 4 characters">
+          <button class="btn" id="btnSu" onclick="signUp()">Sign Up</button>
+        </div>
+      </div>
+      <div id="aProfile" class="hidden">
+        <div class="pcard glass">
+          <div class="who">
+            <div class="avatar" id="pAva">MV</div>
+            <div><div class="hn" id="pName" style="font-size:17px;font-weight:800">—</div><div class="sub" id="pEmail">—</div></div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="kv"><span class="k">Available cash</span><span class="v" id="pCash">$0.00</span></div>
+            <div class="kv"><span class="k">Portfolio value</span><span class="v" id="pVal">$0.00</span></div>
+            <div class="kv"><span class="k">Member since</span><span class="v" id="pSince">—</span></div>
+          </div>
+        </div>
+        <div class="fcard glass">
+          <h3>About MuskVerse</h3>
+          <div class="sub">The investor platform for Musk-linked markets. Live Tesla and Dogelon Mars quotes, estimated SpaceX and Starlink valuations, crypto deposits and withdrawals — one wallet, withdraw anytime.</div>
+        </div>
+        <button class="btn ghost" onclick="signOut()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="bar">
+      <div class="tab on" data-s="home" onclick="go('home')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Home</span></div>
+      <div class="tab" data-s="markets" onclick="go('markets')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 17V9"/><path d="M11 17V5"/><path d="M16 17v-6"/><path d="M21 17V7"/></svg><span>Markets</span></div>
+      <div class="tab" data-s="wallet" onclick="go('wallet')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H5a2 2 0 0 1 0-4h13v4"/><path d="M3 5v14a2 2 0 0 0 2 2h15v-5"/><path d="M17 12a1.8 1.8 0 0 0 0 4h4v-4z"/></svg><span>Wallet</span></div>
+      <div class="tab" data-s="account" onclick="go('account')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6.5 8-6.5s8 2.5 8 6.5"/></svg><span>Account</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="adminModal">
+  <div class="inner glass">
+    <div class="am-h"><b>ADMIN PANEL</b><button class="xbtn" onclick="closeAdmin()">Close</button></div>
+    <div id="adminLogin">
+      <label>Admin PIN</label><input id="adminPin" type="password" placeholder="••••••">
+      <button class="btn" onclick="adminGo()">Enter</button>
+      <div class="upd" id="adminErr" style="color:#FF7B74"></div>
+    </div>
+    <div id="adminBody" class="hidden">
+      <h4 style="margin:12px 0 6px;font-size:12px;letter-spacing:.6px;color:#9AA3B5">USERS</h4>
+      <div style="overflow:auto"><table class="tbl" id="usrTbl"></table></div>
+      <h4 style="margin:16px 0 6px;font-size:12px;letter-spacing:.6px;color:#9AA3B5">PENDING TRANSACTIONS</h4>
+      <div style="overflow:auto"><table class="tbl" id="pendTbl"></table></div>
+      <h4 style="margin:16px 0 6px;font-size:12px;letter-spacing:.6px;color:#9AA3B5">SETTINGS</h4>
+      <label>Admin PIN</label><input id="setPin">
+      <label>Bitcoin deposit address</label><input id="setBtc">
+      <label>Ethereum deposit address</label><input id="setEth">
+      <label>Solana deposit address</label><input id="setSol">
+      <label>Dogecoin deposit address</label><input id="setDoge">
+      <button class="btn" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== ICONS =====================
+var GL = {
+  tesla: '<svg viewBox="0 0 24 24" fill="none" stroke="#E86A33" stroke-width="2.2" stroke-linecap="round"><path d="M4 7l8-3 8 3"/><path d="M12 5v14"/><path d="M8 19h8"/></svg>',
+  spacex: '<svg viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c3 2.5 4.5 6 4.5 9.5 0 4-2 7.5-4.5 10.5-2.5-3-4.5-6.5-4.5-10.5C7.5 8 9 4.5 12 2z"/><circle cx="12" cy="10" r="1.6"/><path d="M9 20l3 2 3-2"/></svg>',
+  starlink: '<svg viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2" stroke-linecap="round"><rect x="8.5" y="8.5" width="7" height="7" rx="1.2" transform="rotate(45 12 12)"/><circle cx="12" cy="12" r="2"/><path d="M4.5 10.5C6 7 9 5 12 5s6 2 7.5 5.5"/><path d="M5 15.5C6.5 18.5 9 20 12 20s5.5-1.5 7-4.5"/></svg>',
+  elon: '<svg viewBox="0 0 24 24" fill="none" stroke="#F5C518" stroke-width="2"><circle cx="7" cy="8" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="17" cy="8" r="1.7"/><path d="M7 11c-1.5 4 1 8 5 8s6.5-4 5-8c-1.5 2-3.5 3-5 3s-3.5-1-5-3z"/></svg>',
+  btc: '<svg viewBox="0 0 24 24" fill="none" stroke="#F7931A" stroke-width="2" stroke-linecap="round"><path d="M8 4h6.5a3 3 0 0 1 0 6H8z"/><path d="M8 10h7a3 3 0 0 1 0 6H8z"/><path d="M8 4v14"/><path d="M10.5 2.5V4"/><path d="M10.5 20V16"/></svg>',
+  eth: '<svg viewBox="0 0 24 24" fill="none" stroke="#8A92B2" stroke-width="2" stroke-linejoin="round"><path d="M12 3l6 8.5-6 3.5-6-3.5z"/><path d="M6 13.5L12 21l6-7.5-6 3z"/></svg>',
+  sol: '<svg viewBox="0 0 24 24" fill="none" stroke="#14F195" stroke-width="2" stroke-linecap="round"><path d="M5 7h14l-3-3"/><path d="M19 17H5l3 3"/><path d="M5 12h14"/></svg>',
+  doge: '<svg viewBox="0 0 24 24" fill="none" stroke="#C2A633" stroke-width="2" stroke-linecap="round"><path d="M6 5v11a2 2 0 0 0 2 2h11"/><path d="M10 9v6"/><path d="M14 9v6"/></svg>'
+};
+var ASSETS = [
+  { id:'tesla',  name:'Tesla',        sym:'TSLA', tag:'Electric Vehicles · NASDAQ',   ic:GL.tesla },
+  { id:'spacex', name:'SpaceX',       sym:'Private', tag:'Space Exploration',        ic:GL.spacex },
+  { id:'starl',  name:'Starlink',     sym:'Private', tag:'Satellite Internet',       ic:GL.starlink },
+  { id:'elon',   name:'Dogelon Mars', sym:'ELON', tag:'Cryptocurrency',             ic:GL.elon }
+];
+var COINS = [
+  { key:'btc',  name:'Bitcoin',  ic:GL.btc },
+  { key:'eth',  name:'Ethereum', ic:GL.eth },
+  { key:'sol',  name:'Solana',   ic:GL.sol },
+  { key:'doge', name:'Dogecoin', ic:GL.doge }
+];
+
+// ===================== STATE =====================
+var API = 'https://superagent-334faafd.base44.app/functions/muskverseApi';
+var state = { token:null, user:null, holdings:[], txs:[], prices:null, addresses:null };
+try { state.token = localStorage.getItem('mv_token') || null; } catch(e){}
+
+function api(action, params, cb){
+  var payload = { action: action };
+  if (params) { for (var k in params) { if (params.hasOwnProperty(k)) payload[k] = params[k]; } }
+  var body = JSON.stringify(payload);
+  function fail(){ cb({ ok:false, error:'Connection problem. Check your network and try again.' }); }
+  if (window.fetch) {
+    fetch(API, { method:'POST', headers:{'content-type':'application/json'}, body: body })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ cb(j); })
+      .catch(function(){ fail(); });
+  } else {
+    try {
+      var x = new XMLHttpRequest();
+      x.open('POST', API, true);
+      x.setRequestHeader('content-type','application/json');
+      x.onreadystatechange = function(){
+        if (x.readyState === 4) {
+          try { cb(JSON.parse(x.responseText)); }
+          catch (e2) { fail(); }
+        }
+      };
+      x.onerror = function(){ fail(); };
+      x.send(body);
+    } catch (e3) { fail(); }
+  }
+}
+function byId(i){ return document.getElementById(i); }
+function fmt(n){
+  n = Number(n || 0);
+  if (n >= 1) return '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if (n === 0) return '$0.00';
+  if (n >= 0.001) return '$' + n.toFixed(4);
+  var s = n.toFixed(11).replace(/0+$/,'');
+  if (s.charAt(s.length-1) === '.') s = s.slice(0,-1);
+  return '$' + s;
+}
+function fmtBig(n){
+  n = Number(n || 0);
+  if (n >= 1e12) return '$' + (n/1e12).toFixed(0) + 'T';
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(0) + 'B';
+  return fmt(n);
+}
+function toast(text, ok){
+  var t = byId('toast');
+  t.textContent = text;
+  t.className = 'show ' + (ok ? 'ok' : 'err');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(function(){ t.className = ''; }, 3800);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+
+// ===================== NAV =====================
+function go(s, anchor){
+  var scr = document.getElementsByClassName('screen');
+  for (var i=0;i<scr.length;i++) scr[i].className = 'screen' + (scr[i].id === 'scr-' + s ? ' on' : '');
+  var tb = document.getElementsByClassName('tab');
+  for (var j=0;j<tb.length;j++) tb[j].className = 'tab' + (tb[j].getAttribute('data-s') === s ? ' on' : '');
+  byId('stage').scrollTop = 0;
+  if (s === 'wallet' || s === 'account' || s === 'home') loadWallet();
+  if (anchor) { var el = byId(anchor); if (el) setTimeout(function(){ byId('stage').scrollTo ? byId('stage').scrollTo(0, el.offsetTop - 90) : (byId('stage').scrollTop = el.offsetTop - 90); }, 60); }
+}
+
+// ===================== PRICES =====================
+function priceOf(id){
+  if (!state.prices) return null;
+  if (id === 'tesla') return state.prices.tesla;
+  if (id === 'elon') return state.prices.coins.elon;
+  return null;
+}
+function chHtml(c){
+  if (c === null || c === undefined) return '';
+  var up = c >= 0;
+  return '<span class="ch ' + (up ? 'up' : 'dn') + '">' + (up ? '▲' : '▼') + ' ' + Math.abs(c).toFixed(2) + '%</span>';
+}
+function assetRow(a, withDesc){
+  var p = priceOf(a.id);
+  var right;
+  if (a.id === 'spacex' || a.id === 'starl') {
+    var est = a.id === 'spacex' ? state.prices.spacex : state.prices.starlink;
+    right = '<div class="est">' + fmtBig(est.value) + '</div><span class="pv-tag">PRIVATE · EST.</span>';
+  } else if (p) {
+    right = '<div class="px">' + fmt(p.price) + '</div>' + chHtml(p.change);
+  } else {
+    right = '<div class="px">—</div>';
+  }
+  return '<div class="arow glass" onclick="tapAsset(\'' + a.id + '\')">' +
+    '<div class="badge-ic">' + a.ic + '</div>' +
+    '<div class="meta"><div class="nm">' + a.name + '</div><div class="tg">' + a.tag + '</div></div>' +
+    '<div class="pr">' + right + '</div></div>' +
+    (withDesc ? '<div class="sub" style="margin:-6px 14px 12px 67px;font-size:11px">' + assetDesc(a.id) + '</div>' : '');
+}
+function assetDesc(id){
+  if (id === 'tesla') return 'American electric vehicle and clean energy company.';
+  if (id === 'spacex') return 'Private spaceflight company. Not separately traded.';
+  if (id === 'starl') return 'SpaceX subsidiary. Not separately traded.';
+  return 'Ethereum-based memecoin named after Elon.';
+}
+function coinCell(c){
+  var p = state.prices ? state.prices.coins[c.key] : null;
+  return '<div class="ccell glass"><div class="top"><div class="badge-ic" style="width:32px;height:32px;border-radius:10px">' + c.ic + '</div><span class="symb">' + c.name + '</span></div>' +
+    '<div class="px">' + (p ? fmt(p.price) : '—') + '</div>' +
+    '<div>' + (p ? chHtml(p.change) : '') + '</div></div>';
+}
+function renderPrices(){
+  if (!state.prices) return;
+  byId('homeAssets').innerHTML = assetRowsHtml(false);
+  byId('mktAssets').innerHTML = assetRowsHtml(true);
+  byId('homeCrypto').innerHTML = coinsHtml();
+  byId('mktCrypto').innerHTML = coinsHtml();
+  var live = state.prices.tesla.live;
+  byId('priceUpd').textContent = live ? 'Live market data · updated ' + new Date(state.prices.ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : 'Showing last known market data';
+  byId('cryptoUpd').textContent = live ? 'Live quotes' : 'Last known quotes';
+  updateTotals();
+  updateInvRate();
+}
+function assetRowsHtml(withDesc){
+  var h = '';
+  for (var i=0;i<ASSETS.length;i++) h += assetRow(ASSETS[i], withDesc);
+  return h;
+}
+function coinsHtml(){
+  var h = '';
+  for (var i=0;i<COINS.length;i++) h += coinCell(COINS[i]);
+  return h;
+}
+function tapAsset(id){
+  if (id === 'tesla' || id === 'elon') { go('wallet','invest'); byId('invAsset').value = id; updateInvRate(); }
+}
+function loadPrices(){
+  api('prices', {}, function(j){
+    if (j.ok) { state.prices = j.prices; renderPrices(); }
+    else if (!state.prices) { byId('priceUpd').textContent = 'Could not load live market data. Retrying…'; }
+  });
+}
+
+// ===================== WALLET =====================
+function updateTotals(){
+  if (!state.user) return;
+  var hold = 0, i;
+  for (i=0;i<state.holdings.length;i++){
+    var p = priceOf(state.holdings[i].assetId);
+    if (p) hold += state.holdings[i].units * p.price;
+  }
+  var cash = state.user.cash || 0;
+  byId('cashPill').textContent = fmt(cash);
+  byId('heroTotal').textContent = fmt(cash + hold);
+  byId('heroCash').textContent = fmt(cash);
+  byId('heroHold').textContent = fmt(hold);
+  byId('wCash').textContent = fmt(cash);
+  byId('wVal').textContent = fmt(hold);
+  byId('wTot').textContent = fmt(cash + hold);
+  byId('pCash').textContent = fmt(cash);
+  byId('pVal').textContent = fmt(cash + hold);
+  var ht = '<tr><th>Asset</th><th>Units</th><th>Value</th></tr>', any = false;
+  for (i=0;i<ASSETS.length;i++){
+    var a = ASSETS[i], u = units(a.id);
+    if (u > 0){ any = true; var p2 = priceOf(a.id); ht += '<tr><td>' + a.name + '</td><td>' + u.toFixed(4) + '</td><td>' + fmt(u * (p2 ? p2.price : 0)) + '</td></tr>'; }
+  }
+  if (!any) ht += '<tr><td colspan="3"><div class="empty">No holdings yet — deposit and invest.</div></td></tr>';
+  byId('holdTbl').innerHTML = ht;
+  var tt = '<tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr>';
+  if (state.txs.length === 0) tt += '<tr><td colspan="4"><div class="empty">No transactions yet.</div></td></tr>';
+  for (i=0;i<state.txs.length;i++){
+    var x = state.txs[i];
+    tt += '<tr><td>' + String(x.createdAt).slice(0,10) + '</td><td>' + x.type + (x.coin ? ' · ' + x.coin.toUpperCase() : '') + '</td><td>' + fmt(x.amount) + '</td><td><span class="st ' + x.status + '">' + x.status.toUpperCase() + '</span></td></tr>';
+  }
+  byId('txTbl').innerHTML = tt;
+}
+function units(id){ for (var i=0;i<state.holdings.length;i++){ if (state.holdings[i].assetId === id) return Number(state.holdings[i].units)||0; } return 0; }
+var lastAuth = 0;
+function showUser(u, holds, txs){
+  state.user = u; state.holdings = holds || []; state.txs = txs || [];
+  byId('wLocked').className = 'lockbox glass hidden';
+  byId('wOpen').className = '';
+  byId('aAuth').className = 'hidden';
+  byId('aProfile').className = '';
+  var nm = u.name || 'Investor';
+  byId('greetHi').textContent = 'Welcome back,';
+  byId('greetName').textContent = nm;
+  var ini = nm.split(' ').map(function(w){ return w.charAt(0); }).join('').slice(0,2).toUpperCase();
+  byId('avatar').textContent = ini; byId('pAva').textContent = ini;
+  byId('pName').textContent = nm;
+  byId('pEmail').textContent = u.email;
+  byId('pSince').textContent = String(u.createdAt || '').slice(0,10) || '—';
+  updateTotals();
+}
+function loadWallet(){
+  if (!state.token) { byId('wLocked').className = 'lockbox glass'; byId('wOpen').className = 'hidden'; byId('aAuth').className = ''; byId('aProfile').className = 'hidden'; byId('cashPill').textContent = '$0.00'; return; }
+  api('me', { token: state.token }, function(j){
+    if (!j.ok) {
+      if (Date.now() - lastAuth < 8000) { setTimeout(loadWallet, 1500); return; }
+      state.token = null; try{ localStorage.removeItem('mv_token'); }catch(e){}
+      loadWallet(); return;
+    }
+    showUser(j.user, j.holdings, j.txs);
+  });
+}
+
+// ===================== AUTH =====================
+function signUp(){
+  var n = byId('suName').value.trim(), e = byId('suEmail').value.trim(), p = byId('suPw').value;
+  if (!n || e.indexOf('@') < 0 || p.length < 4) { toast('Enter your full name, a valid email and a password of at least 4 characters.'); return; }
+  byId('btnSu').disabled = true;
+  api('signup', { name:n, email:e, password:p }, function(j){
+    byId('btnSu').disabled = false;
+    if (!j.ok) { toast(j.error); return; }
+    state.token = j.token; lastAuth = Date.now();
+    try { localStorage.setItem('mv_token', j.token); } catch(e2){}
+    showUser(j.user, [], []); go('wallet'); loadWallet();
+    toast('Welcome to MuskVerse, ' + j.user.name.split(' ')[0] + '!', true);
+  });
+}
+function signIn(){
+  var e = byId('siEmail').value.trim(), p = byId('siPw').value;
+  byId('btnSi').disabled = true;
+  api('signin', { email:e, password:p }, function(j){
+    byId('btnSi').disabled = false;
+    if (!j.ok) { toast(j.error); return; }
+    state.token = j.token; lastAuth = Date.now();
+    try { localStorage.setItem('mv_token', j.token); } catch(e2){}
+    showUser(j.user, [], []); go('home'); loadWallet();
+    toast('Welcome back!', true);
+  });
+}
+function signOut(){
+  state.token = null; state.user = null; lastAuth = 0;
+  try { localStorage.removeItem('mv_token'); } catch(e){}
+  byId('greetHi').textContent = 'Welcome to MuskVerse';
+  byId('greetName').textContent = 'Investor';
+  byId('avatar').textContent = 'MV';
+  loadWallet(); go('home');
+  toast('Signed out.', true);
+}
+
+// ===================== DEPOSIT / INVEST / WITHDRAW =====================
+var fundCoin = 'btc', wdCoin = 'btc';
+var COINKEYS = ['btc','eth','sol','doge'];
+function coinChips(cid, sel, fn){
+  var h = '';
+  for (var i=0;i<COINKEYS.length;i++){
+    var k = COINKEYS[i], lbl = k.toUpperCase();
+    h += '<span class="chip' + (k === sel ? ' on' : '') + '" data-k="' + k + '">' + lbl + '</span>';
+  }
+  byId(cid).innerHTML = h;
+  var ch = byId(cid).getElementsByTagName('span');
+  for (var j=0;j<ch.length;j++){ ch[j].onclick = function(){ fn(this.getAttribute('data-k')); }; }
+}
+function setFundCoin(k){
+  fundCoin = k; coinChips('fundChips', fundCoin, setFundCoin);
+  if (state.addresses) byId('fundAddr').textContent = 'Deposit address (' + k.toUpperCase() + '): ' + state.addresses[k + 'Addr'];
+}
+function setWdCoin(k){ wdCoin = k; coinChips('wdChips', wdCoin, setWdCoin); }
+function loadAddresses(){
+  api('addresses', {}, function(j){ if (j.ok) { state.addresses = j; setFundCoin(fundCoin); } });
+}
+function updateInvRate(){
+  var id = byId('invAsset').value, p = priceOf(id);
+  byId('invRate').textContent = p ? 'Current price: ' + fmt(p.price) + ' per unit — updates live' : '';
+}
+function submitFund(){
+  var amt = parseFloat(byId('fundAmt').value), proof = byId('fundProof').value.trim();
+  if (!amt || amt <= 0) { toast('Enter the amount you deposited in USD.'); return; }
+  if (proof.length < 6) { toast('Paste your transaction hash or payment reference as proof of payment.'); return; }
+  byId('btnFund').disabled = true;
+  api('deposit', { token: state.token, coin: fundCoin, amount: amt, proof: proof }, function(j){
+    byId('btnFund').disabled = false;
+    if (!j.ok) { toast(j.error); return; }
+    byId('fundAmt').value = ''; byId('fundProof').value = '';
+    toast(j.message, true); loadWallet();
+  });
+}
+function submitInvest(){
+  var amt = parseFloat(byId('invAmt').value), id = byId('invAsset').value;
+  byId('btnInv').disabled = true;
+  api('invest', { token: state.token, assetId: id, amount: amt }, function(j){
+    byId('btnInv').disabled = false;
+    if (!j.ok) { toast(j.error); return; }
+    byId('invAmt').value = '';
+    toast(j.message, true); loadWallet();
+  });
+}
+function submitWithdraw(){
+  var amt = parseFloat(byId('wdAmt').value), wallet = byId('wdWallet').value.trim();
+  byId('btnWd').disabled = true;
+  api('withdraw', { token: state.token, coin: wdCoin, amount: amt, wallet: wallet }, function(j){
+    byId('btnWd').disabled = false;
+    if (!j.ok) { toast(j.error); return; }
+    byId('wdAmt').value = ''; byId('wdWallet').value = '';
+    toast(j.message, true); loadWallet();
+  });
+}
+
+// ===================== ADMIN =====================
+var taps = 0, tapTm = null;
+function brandTap(){
+  taps++;
+  if (tapTm) clearTimeout(tapTm);
+  tapTm = setTimeout(function(){ taps = 0; }, 1500);
+  if (taps >= 5) { taps = 0; byId('adminModal').style.display = 'flex'; }
+}
+function closeAdmin(){ byId('adminModal').style.display = 'none'; }
+function adminGo(){
+  var pin = byId('adminPin').value;
+  api('admin', { pin: pin }, function(j){
+    if (!j.ok) { byId('adminErr').textContent = j.error; return; }
+    byId('adminErr').textContent = '';
+    byId('adminLogin').className = 'hidden';
+    byId('adminBody').className = '';
+    renderAdmin(j);
+  });
+}
+function renderAdmin(j){
+  var ut = '<tr><th>Name</th><th>Email</th><th>Cash</th><th>Joined</th></tr>';
+  for (var i=0;i<j.users.length;i++){
+    var u = j.users[i];
+    ut += '<tr><td>' + esc(u.name) + '</td><td>' + esc(u.email) + '</td><td>' + fmt(u.cash) + '</td><td>' + String(u.createdAt).slice(0,10) + '</td></tr>';
+  }
+  if (!j.users.length) ut += '<tr><td colspan="4"><div class="empty">No users yet.</div></td></tr>';
+  byId('usrTbl').innerHTML = ut;
+  var pt = '<tr><th>User</th><th>Type</th><th>Amount</th><th></th></tr>';
+  for (var k=0;k<j.pending.length;k++){
+    var t = j.pending[k];
+    pt += '<tr><td>' + esc(t.user) + '</td><td>' + t.type + (t.coin ? ' · ' + t.coin.toUpperCase() : '') + '</td><td>' + fmt(t.amount) + '</td><td><span style="white-space:nowrap"><button class="chip on" onclick="approveTx(\'' + t.id + '\',true)">✓</button> <button class="chip" style="color:#FF7B74" onclick="approveTx(\'' + t.id + '\',false)">✕</button></span></td></tr>';
+  }
+  if (!j.pending.length) pt += '<tr><td colspan="4"><div class="empty">No pending transactions.</div></td></tr>';
+  byId('pendTbl').innerHTML = pt;
+  byId('setPin').value = j.settings.adminPin || '';
+  byId('setBtc').value = j.settings.btcAddr || '';
+  byId('setEth').value = j.settings.ethAddr || '';
+  byId('setSol').value = j.settings.solAddr || '';
+  byId('setDoge').value = j.settings.dogeAddr || '';
+}
+function approveTx(id, ok){
+  api('adminApprove', { pin: byId('setPin').value, txId: id, approve: ok }, function(j){
+    if (j.ok) { adminGo(); loadWallet(); toast(ok ? 'Transaction approved.' : 'Transaction rejected.', true); }
+    else toast(j.error);
+  });
+}
+function saveSettings(){
+  api('adminSettings', { pin: byId('setPin').value, settings: { adminPin: byId('setPin').value, btcAddr: byId('setBtc').value, ethAddr: byId('setEth').value, solAddr: byId('setSol').value, dogeAddr: byId('setDoge').value } }, function(j){
+    if (j.ok) { state.addresses = { btcAddr: j.settings.btcAddr, ethAddr: j.settings.ethAddr, solAddr: j.settings.solAddr, dogeAddr: j.settings.dogeAddr }; setFundCoin(fundCoin); toast('Settings saved.', true); }
+    else toast(j.error);
+  });
+}
+
+// ===================== BOOT =====================
+byId('brand').onclick = brandTap;
+coinChips('fundChips', fundCoin, setFundCoin);
+coinChips('wdChips', wdCoin, setWdCoin);
+loadPrices();
+loadAddresses();
+loadWallet();
+setInterval(loadPrices, 30000);
+byId('invAsset').onchange = updateInvRate;
+</script>
+</body>
+</html>
