@@ -1,7 +1,0 @@
-<!DOCTYPE html><html><body><pre id="r">starting…</pre>
-<script>
-var API='https://superagent-334faafd.base44.app/functions/muskverseApi';
-fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:'{"action":"prices"}'})
- .then(function(r){ return r.text().then(function(t){ document.getElementById('r').textContent='HTTP '+r.status+' type='+r.headers.get('content-type')+' body='+t.slice(0,300); }); })
- .catch(function(e){ document.getElementById('r').textContent='FETCH ERROR: '+e.message; });
-</script></body></html>
